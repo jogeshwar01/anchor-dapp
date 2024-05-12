@@ -1,13 +1,19 @@
 import { AnchorDappIDL, getAnchorDappProgramId } from '@anchor-dapp/anchor';
 import { Program } from '@coral-xyz/anchor';
 import { useConnection } from '@solana/wallet-adapter-react';
-import { Cluster, Keypair, PublicKey } from '@solana/web3.js';
+import { Cluster, PublicKey } from '@solana/web3.js';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { useCluster } from '../cluster/cluster-data-access';
 import { useAnchorProvider } from '../solana/solana-provider';
 import { useTransactionToast } from '../ui/ui-layout';
+
+interface EntryArgs {
+  owner: PublicKey;
+  title: string;
+  message: string;
+}
 
 export function useAnchorDappProgram() {
   const { connection } = useConnection();
@@ -22,7 +28,7 @@ export function useAnchorDappProgram() {
 
   const accounts = useQuery({
     queryKey: ['anchor-dapp', 'all', { cluster }],
-    queryFn: () => program.account.anchorDapp.all(),
+    queryFn: () => program.account.journalEntryState.all(),
   });
 
   const getProgramAccount = useQuery({
@@ -30,19 +36,25 @@ export function useAnchorDappProgram() {
     queryFn: () => connection.getParsedAccountInfo(programId),
   });
 
-  const initialize = useMutation({
+  const createEntry = useMutation<string, Error, EntryArgs>({
     mutationKey: ['anchor-dapp', 'initialize', { cluster }],
-    mutationFn: (keypair: Keypair) =>
-      program.methods
-        .initialize()
-        .accounts({ anchorDapp: keypair.publicKey })
-        .signers([keypair])
-        .rpc(),
+    mutationFn: async ({ title, message, owner }) => {
+      const [journalEntryAddress] = await PublicKey.findProgramAddress(
+        [Buffer.from(title), owner.toBuffer()],
+        programId
+      );
+
+      // no need of signer as we are using pda
+      return program.methods
+        .createEntry(title, message)
+        .accounts({ journalEntry: journalEntryAddress })
+        .rpc();
+    },
     onSuccess: (signature) => {
       transactionToast(signature);
       return accounts.refetch();
     },
-    onError: () => toast.error('Failed to initialize account'),
+    onError: (error) => toast.error('Failed to initialize account'),
   });
 
   return {
@@ -50,7 +62,7 @@ export function useAnchorDappProgram() {
     programId,
     accounts,
     getProgramAccount,
-    initialize,
+    createEntry,
   };
 }
 
@@ -61,58 +73,49 @@ export function useAnchorDappProgramAccount({
 }) {
   const { cluster } = useCluster();
   const transactionToast = useTransactionToast();
-  const { program, accounts } = useAnchorDappProgram();
+  const { programId, program, accounts } = useAnchorDappProgram();
 
   const accountQuery = useQuery({
     queryKey: ['anchor-dapp', 'fetch', { cluster, account }],
-    queryFn: () => program.account.anchorDapp.fetch(account),
+    queryFn: () => program.account.journalEntryState.fetch(account),
   });
 
-  const closeMutation = useMutation({
+  const updateEntry = useMutation<string, Error, EntryArgs>({
+    mutationKey: ['anchor-dapp', 'initialize', { cluster }],
+    mutationFn: async ({ title, message, owner }) => {
+      const [journalEntryAddress] = await PublicKey.findProgramAddress(
+        [Buffer.from(title), owner.toBuffer()],
+        programId
+      );
+
+      return program.methods
+        .updateEntry(title, message)
+        .accounts({ journalEntry: journalEntryAddress })
+        .rpc();
+    },
+    onSuccess: (signature) => {
+      transactionToast(signature);
+      return accounts.refetch();
+    },
+    onError: (error) => toast.error('Failed to initialize account'),
+  });
+
+  const deleteEntry = useMutation({
     mutationKey: ['anchor-dapp', 'close', { cluster, account }],
-    mutationFn: () =>
-      program.methods.close().accounts({ anchorDapp: account }).rpc(),
+    mutationFn: (title: string) =>
+      program.methods
+        .deleteEntry(title)
+        .accounts({ journalEntry: account })
+        .rpc(),
     onSuccess: (tx) => {
       transactionToast(tx);
       return accounts.refetch();
     },
   });
 
-  const decrementMutation = useMutation({
-    mutationKey: ['anchor-dapp', 'decrement', { cluster, account }],
-    mutationFn: () =>
-      program.methods.decrement().accounts({ anchorDapp: account }).rpc(),
-    onSuccess: (tx) => {
-      transactionToast(tx);
-      return accountQuery.refetch();
-    },
-  });
-
-  const incrementMutation = useMutation({
-    mutationKey: ['anchor-dapp', 'increment', { cluster, account }],
-    mutationFn: () =>
-      program.methods.increment().accounts({ anchorDapp: account }).rpc(),
-    onSuccess: (tx) => {
-      transactionToast(tx);
-      return accountQuery.refetch();
-    },
-  });
-
-  const setMutation = useMutation({
-    mutationKey: ['anchor-dapp', 'set', { cluster, account }],
-    mutationFn: (value: number) =>
-      program.methods.set(value).accounts({ anchorDapp: account }).rpc(),
-    onSuccess: (tx) => {
-      transactionToast(tx);
-      return accountQuery.refetch();
-    },
-  });
-
   return {
     accountQuery,
-    closeMutation,
-    decrementMutation,
-    incrementMutation,
-    setMutation,
+    updateEntry,
+    deleteEntry,
   };
 }
