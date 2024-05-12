@@ -3,53 +3,15 @@
   "name": "anchor_dapp",
   "instructions": [
     {
-      "name": "close",
+      "name": "createEntry",
       "accounts": [
         {
-          "name": "payer",
+          "name": "journalEntry",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
-          "name": "anchorDapp",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "decrement",
-      "accounts": [
-        {
-          "name": "anchorDapp",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "increment",
-      "accounts": [
-        {
-          "name": "anchorDapp",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "initialize",
-      "accounts": [
-        {
-          "name": "payer",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "anchorDapp",
+          "name": "owner",
           "isMut": true,
           "isSigner": true
         },
@@ -59,40 +21,101 @@
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "message",
+          "type": "string"
+        }
+      ]
     },
     {
-      "name": "set",
+      "name": "updateEntry",
       "accounts": [
         {
-          "name": "anchorDapp",
+          "name": "journalEntry",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
           "isSigner": false
         }
       ],
       "args": [
         {
-          "name": "value",
-          "type": "u8"
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "newMessage",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "deleteEntry",
+      "accounts": [
+        {
+          "name": "journalEntry",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "title",
+          "type": "string"
         }
       ]
     }
   ],
   "accounts": [
     {
-      "name": "AnchorDapp",
+      "name": "JournalEntryState",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "count",
-            "type": "u8"
+            "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "name": "message",
+            "type": "string"
+          },
+          {
+            "name": "entryId",
+            "type": "u64"
           }
         ]
       }
     }
   ],
   "metadata": {
-    "address": "6K3vKSaZZhc1bsn8NA4yzp1QgjQBXaFAHQaBD476SnwU"
+    "address": "7brWaJ6xaB8qE8u7N5S1undQZjZMT7FBLYBfDfDxafF1"
   }
 }

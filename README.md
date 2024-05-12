@@ -1,8 +1,56 @@
-# anchor-dapp
+# Anchor CRUD Dapp
 
-This project is generated with the [create-solana-dapp](https://github.com/solana-developers/create-solana-dapp) generator.
+This is a on-chain CRUD dapp. It lets you create, read, update and delete entries on the solana blockchain and interact with the solana program via a UI.
+
+### Debug
+
+1. Deactivate features in Solana test validator
+
+```
+solana-test-validator --deactivate-feature <FEATURE_TO_DEACTIVATE_ID> --bpf-program <PROGRAM_ID>  target/deploy/anchor_dapp.so --reset
+```
+
+2. Solana: Computational budget exceeded
+
+- Logs contain - 810 of 810 compute units utilised
+- Can be done inside the program/frontend as well using increase compute budget instructions for that txn.
+
+```
+solana-test-validator --compute-unit-limit 500000     // can put value here - 500000 is an example
+```
+
+### Commands
+
+- Anchor
+
+```
+anchor keys sync
+anchor build
+anchor deploy
+```
+
+- React
+
+```
+npm run dev
+```
+
+- Solana test validator
+
+```
+solana-test-validator --compute-unit-limit 500000
+```
+
+- To check program account pubkey or balance
+
+```
+solana-keygen pubkey target/deploy/anchor_dapp-keypair.json
+solana balance $(solana-keygen pubkey target/deploy/anchor_dapp-keypair.json)
+```
 
 ## Getting Started
+
+This project is generated with the [create-solana-dapp](https://github.com/solana-developers/create-solana-dapp) generator.
 
 ### Prerequisites
 
@@ -93,23 +141,4 @@ Build the web app
 
 ```shell
 npm run build
-```
-
-#### Issues
-
-1. Deactivate features in Solana test validator
-
-```
-solana-test-validator --deactivate-feature <FEATURE_TO_DEACTIVATE_ID> --bpf-program <PROGRAM_ID>  target/deploy/anchor_dapp.so --reset
-
-```
-
-2. Solana: Computational budget exceeded
-
-- Logs contain - 810 of 810 compute units utilised
-- Can be done inside the program/frontend as well using increase compute budget instructions for that txn.
-
-```
-solana-test-validator --compute-unit-limit 500000     // can put value here - 500000 is an example
-
 ```

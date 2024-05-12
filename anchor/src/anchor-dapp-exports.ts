@@ -8,7 +8,7 @@ export { AnchorDapp, AnchorDappIDL };
 
 // After updating your program ID (e.g. after running `anchor keys sync`) update the value below.
 export const ANCHOR_DAPP_PROGRAM_ID = new PublicKey(
-  '6K3vKSaZZhc1bsn8NA4yzp1QgjQBXaFAHQaBD476SnwU'
+  '7brWaJ6xaB8qE8u7N5S1undQZjZMT7FBLYBfDfDxafF1'
 );
 
 // This is a helper function to get the program ID for the AnchorDapp program depending on the cluster.

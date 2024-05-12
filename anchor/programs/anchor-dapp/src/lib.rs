@@ -2,69 +2,100 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("6K3vKSaZZhc1bsn8NA4yzp1QgjQBXaFAHQaBD476SnwU");
+declare_id!("7brWaJ6xaB8qE8u7N5S1undQZjZMT7FBLYBfDfDxafF1");
 
 #[program]
 pub mod anchor_dapp {
     use super::*;
 
-  pub fn close(_ctx: Context<CloseAnchorDapp>) -> Result<()> {
-    Ok(())
-  }
+    pub fn create_entry(
+      ctx: Context<CreateEntry>,
+      title: String,
+      message: String
+    ) -> Result<()> {
+      let journal_entry = &mut ctx.accounts.journal_entry;
+      journal_entry.owner = ctx.accounts.owner.key();
+      journal_entry.title = title;
+      journal_entry.message = message;
 
-  pub fn decrement(ctx: Context<Update>) -> Result<()> {
-    ctx.accounts.anchor_dapp.count = ctx.accounts.anchor_dapp.count.checked_sub(1).unwrap();
-    Ok(())
-  }
+      Ok(())
+    }
 
-  pub fn increment(ctx: Context<Update>) -> Result<()> {
-    ctx.accounts.anchor_dapp.count = ctx.accounts.anchor_dapp.count.checked_add(1).unwrap();
-    Ok(())
-  }
+    pub fn update_entry(
+      ctx: Context<UpdateEntry>,
+      _title: String,  // will be used to find the pda - used _ to tell rust we know its not used anywhere
+      new_message: String
+    ) -> Result<()> {
+      let journal_entry = &mut ctx.accounts.journal_entry;
+      journal_entry.message = new_message;
 
-  pub fn initialize(_ctx: Context<InitializeAnchorDapp>) -> Result<()> {
-    Ok(())
-  }
+      Ok(())
+    }
 
-  pub fn set(ctx: Context<Update>, value: u8) -> Result<()> {
-    ctx.accounts.anchor_dapp.count = value.clone();
-    Ok(())
-  }
-}
+    pub fn delete_entry(
+      _ctx: Context<DeleteEntry>,
+      _title: String,
+    ) -> Result<()> {
+      Ok(())
+    }
 
-#[derive(Accounts)]
-pub struct InitializeAnchorDapp<'info> {
-  #[account(mut)]
-  pub payer: Signer<'info>,
-
-  #[account(
-  init,
-  space = 8 + AnchorDapp::INIT_SPACE,
-  payer = payer
-  )]
-  pub anchor_dapp: Account<'info, AnchorDapp>,
-  pub system_program: Program<'info, System>,
-}
-#[derive(Accounts)]
-pub struct CloseAnchorDapp<'info> {
-  #[account(mut)]
-  pub payer: Signer<'info>,
-
-  #[account(
-  mut,
-  close = payer, // close account and return lamports to payer
-  )]
-  pub anchor_dapp: Account<'info, AnchorDapp>,
-}
-
-#[derive(Accounts)]
-pub struct Update<'info> {
-  #[account(mut)]
-  pub anchor_dapp: Account<'info, AnchorDapp>,
 }
 
 #[account]
 #[derive(InitSpace)]
-pub struct AnchorDapp {
-  count: u8,
+pub struct JournalEntryState {
+  pub owner: Pubkey,
+  #[max_len(20)]      // need this for variable length types if we need to use InitSpace
+  pub title: String,
+  #[max_len(200)]
+  pub message: String,
+  pub entry_id: u64,
+}
+
+#[derive(Accounts)]
+#[instruction(title: String)]
+pub struct CreateEntry<'info> {
+  #[account(
+    init,
+    seeds = [title.as_bytes(), owner.key().as_ref()],
+    bump,
+    payer = owner,
+    space = 8 + JournalEntryState::INIT_SPACE,
+  )]
+  pub journal_entry: Account<'info, JournalEntryState>,
+  #[account(mut)]
+  pub owner: Signer<'info>,
+  pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(title: String)]
+pub struct UpdateEntry<'info> {
+  #[account(
+    mut,
+    seeds = [title.as_bytes(), owner.key().as_ref()],
+    bump,
+    realloc = 8 + JournalEntryState::INIT_SPACE,   // as our string values change, space will have to be reallocated - either increase or decrease
+    realloc::payer = owner,  // needs to pay rent or get back excess rent when string changes
+    realloc::zero = true
+  )]
+  pub journal_entry: Account<'info, JournalEntryState>,
+  #[account(mut)]
+  pub owner: Signer<'info>,
+  pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(title: String)]
+pub struct DeleteEntry<'info> {
+  #[account(
+    mut,
+    seeds = [title.as_bytes(), owner.key().as_ref()],
+    bump,
+    close = owner   // you need to be the associated pub key to close account
+  )]
+  pub journal_entry: Account<'info, JournalEntryState>,
+  #[account(mut)]
+  pub owner: Signer<'info>,
+  pub system_program: Program<'info, System>,
 }

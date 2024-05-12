@@ -5,14 +5,14 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-anchor_dapp = "6K3vKSaZZhc1bsn8NA4yzp1QgjQBXaFAHQaBD476SnwU"
+anchor_dapp = "7brWaJ6xaB8qE8u7N5S1undQZjZMT7FBLYBfDfDxafF1"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
 cluster = "Localnet"
-wallet = "~/.config/solana/id.json"
+wallet = "/home/jogeshwar/.config/solana/id.json"
 
 [scripts]
 test = "../node_modules/.bin/nx run anchor:jest"
